@@ -5,7 +5,7 @@ import (
 	"github.com/Ahmeds-Library/Chat-App/internal/database"
 	"github.com/gin-gonic/gin"
 )
-
+	
 func main() {
 	database.ConnectDatabase()
 

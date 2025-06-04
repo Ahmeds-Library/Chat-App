@@ -33,11 +33,16 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	tokenstring, err := services.CreateToken(dbID, u.Username, u.Number)
+	refreshtoken, err := services.Create_Refresh_Token(dbID, u.Username, u.Number)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to create token", "details": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"token": tokenstring})
+	accesstoken, err := services.Create_Access_Token(dbID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to create token", "details": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Login successful", "Refresh token": refreshtoken, "Access token": accesstoken})
 }

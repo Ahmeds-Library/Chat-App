@@ -9,5 +9,5 @@ func RoutesHandler(r *gin.Engine) {
 
 	r.POST("/signup", handlers.Signup)
 	r.POST("/login", handlers.Login)
-
+	r.POST("/renew_access", handlers.Renew_Access)
 }
