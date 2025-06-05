@@ -2,7 +2,6 @@ package mongo_db
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log"
 	"os"
@@ -13,9 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var Db *sql.DB
-
-func ConnectMongoDatabase() {
+func ConnectMongoDatabase() (*mongo.Client, error) {
 
 	utils.LoadEnvVariables()
 
@@ -35,4 +32,6 @@ func ConnectMongoDatabase() {
 	} else {
 		fmt.Println("Connected to mongoDB!!!")
 	}
+	return client, nil
 }
+

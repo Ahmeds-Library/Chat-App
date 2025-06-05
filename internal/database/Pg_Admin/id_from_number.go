@@ -18,7 +18,6 @@ func InitDB(dataSourceName string) error {
 }
 
 func GetUserByPhone(phone string) (*models.User, error) {
-	fmt.Println("phone:", phone)
 	var user models.User
 	row := Db.QueryRow("SELECT id, username, number FROM users WHERE number=$1", phone)
 	if err := row.Scan(&user.ID, &user.Username, &user.Number); err != nil {
@@ -31,11 +30,3 @@ func GetUserByPhone(phone string) (*models.User, error) {
 	return &user, nil
 }
 
-func TestGetUserByPhone(phone string) {
-	user, err := GetUserByPhone(phone)
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		fmt.Printf("User found: ID=%s, Username=%s, Number=%s\n", user.ID, user.Username, user.Number)
-	}
-}

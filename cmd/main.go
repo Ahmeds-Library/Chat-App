@@ -10,7 +10,6 @@ import (
 func main() {
 	pg_admin.ConnectPgAdminDatabase()
 	mongo_db.ConnectMongoDatabase()
-	pg_admin.TestGetUserByPhone("12345678992")
 	r := gin.Default()
 
 	routes.RoutesHandler(r)
