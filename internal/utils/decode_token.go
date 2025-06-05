@@ -3,7 +3,7 @@ package utils
 import (
 	"errors"
 
-	"github.com/Ahmeds-Library/Chat-App/internal/auth"
+	"github.com/Ahmeds-Library/Chat-App/internal/middleware"
 	"github.com/golang-jwt/jwt"
 )
 
@@ -12,7 +12,7 @@ func DecodeToken(tokenString string) (jwt.MapClaims, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")
 		}
-		return auth.SecretKey, nil
+		return middleware.SecretKey, nil
 	})
 
 	if err != nil {

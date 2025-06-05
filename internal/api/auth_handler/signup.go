@@ -1,9 +1,9 @@
-package handlers
+package auth_handler
 
 import (
 	"net/http"
 
-	"github.com/Ahmeds-Library/Chat-App/internal/database"
+	pg_admin "github.com/Ahmeds-Library/Chat-App/internal/database/Pg_Admin"
 	"github.com/Ahmeds-Library/Chat-App/internal/models"
 	"github.com/gin-gonic/gin"
 )
@@ -16,10 +16,16 @@ func Signup(c *gin.Context) {
 		return
 	}
 
-	err := database.CreateUser(u.Username, u.Password, u.Number)
+	err := pg_admin.CreateUser(u.Username, u.Password, u.Number)
 	if err != nil {
 		if err.Error() == "username already exists" {
 			c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
+			return
+		} else if err.Error() == "pq: new row for relation \"users\" violates check constraint \"number_length_check\"" {
+			c.JSON(http.StatusConflict, gin.H{"error": "Phone number is too short, it must be 11 digits"})
+			return
+		} else if err.Error() == "pq: value too long for type character varying(11)" {
+			c.JSON(http.StatusConflict, gin.H{"error": "Phone number is too long, it must be 11 digits"})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error", "details": err.Error()})

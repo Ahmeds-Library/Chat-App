@@ -1,4 +1,4 @@
-package database
+package pg_admin
 
 import (
 	"database/sql"

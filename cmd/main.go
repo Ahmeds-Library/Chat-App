@@ -1,14 +1,15 @@
 package main
 
 import (
-	"github.com/Ahmeds-Library/Chat-App/internal/database"
+	mongo_db "github.com/Ahmeds-Library/Chat-App/internal/database/Mongo_DB"
+	pg_admin "github.com/Ahmeds-Library/Chat-App/internal/database/Pg_Admin"
 	"github.com/Ahmeds-Library/Chat-App/internal/routes"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	database.ConnectDatabase()
-
+	pg_admin.ConnectPgAdminDatabase()
+	mongo_db.ConnectMongoDatabase()
 	r := gin.Default()
 
 	routes.RoutesHandler(r)
