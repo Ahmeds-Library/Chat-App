@@ -3,9 +3,9 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/Ahmeds-Library/Chat-App/internal/auth"
 	"github.com/Ahmeds-Library/Chat-App/internal/database"
 	"github.com/Ahmeds-Library/Chat-App/internal/models"
-	"github.com/Ahmeds-Library/Chat-App/internal/services"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -33,13 +33,13 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	refreshtoken, err := services.Create_Refresh_Token(dbID, u.Username, u.Number)
+	refreshtoken, err := auth.Create_Refresh_Token(dbID, u.Username, u.Number)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to create token", "details": err.Error()})
 		return
 	}
 
-	accesstoken, err := services.Create_Access_Token(dbID)
+	accesstoken, err := auth.Create_Access_Token(dbID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to create token", "details": err.Error()})
 		return

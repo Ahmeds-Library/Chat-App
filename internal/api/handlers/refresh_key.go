@@ -3,12 +3,12 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/Ahmeds-Library/Chat-App/internal/services"
+	"github.com/Ahmeds-Library/Chat-App/internal/auth"
 	"github.com/Ahmeds-Library/Chat-App/internal/utils"
 	"github.com/gin-gonic/gin"
 )
 
-func Renew_Access(c *gin.Context) {
+func Refresh_Key(c *gin.Context) {
 	tokenString := c.GetHeader("Authorization")
 	if tokenString == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "No token provided"})
@@ -17,7 +17,7 @@ func Renew_Access(c *gin.Context) {
 
 	tokenString = tokenString[len("Bearer "):]
 
-	if err := services.VerifyToken(tokenString); err != nil {
+	if err := auth.VerifyToken(tokenString); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token", "details": err.Error()})
 		return
 	}
@@ -44,14 +44,12 @@ func Renew_Access(c *gin.Context) {
 		return
 	}
 
-
-
 	if !ok2 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims", "details": "User ID not found in token claims"})
 		return
 	}
 
-	accesstoken, err := services.Create_Access_Token(userID)
+	accesstoken, err := auth.Create_Access_Token(userID)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to create refresh token", "details": err.Error()})

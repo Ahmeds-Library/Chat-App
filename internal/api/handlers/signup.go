@@ -4,15 +4,12 @@ import (
 	"net/http"
 
 	"github.com/Ahmeds-Library/Chat-App/internal/database"
+	"github.com/Ahmeds-Library/Chat-App/internal/models"
 	"github.com/gin-gonic/gin"
 )
 
-func Signup(c *gin.Context) {	
-	var u struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-		Number   string `json:"number"`
-	}
+func Signup(c *gin.Context) {
+	var u models.User
 
 	if err := c.ShouldBindJSON(&u); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input", "details": err.Error()})
