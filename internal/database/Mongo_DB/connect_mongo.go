@@ -19,9 +19,9 @@ func ConnectMongoDatabase() {
 
 	utils.LoadEnvVariables()
 
-	fmt.Println("Mongo_URI:", os.Getenv("Mongo_URI"))
-
 	MONGO_URI := os.Getenv("MONGO_URI")
+
+	fmt.Println("Mongo_URI:", MONGO_URI)
 
 	clientOptions := options.Client().ApplyURI(MONGO_URI)
 	client, err := mongo.Connect(context.Background(), clientOptions)
@@ -29,10 +29,10 @@ func ConnectMongoDatabase() {
 		log.Fatal(err)
 	}
 
-    err = client.Ping(context.Background(), nil)
-    if err != nil {
-        log.Fatal(err)
-    }else{
-      fmt.Println("Connected to mongoDB!!!")
-   }
+	err = client.Ping(context.Background(), nil)
+	if err != nil {
+		log.Fatal(err)
+	} else {
+		fmt.Println("Connected to mongoDB!!!")
+	}
 }
