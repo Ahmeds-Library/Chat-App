@@ -1,15 +1,15 @@
 package routes
 
 import (
-	"github.com/Ahmeds-Library/Chat-App/internal/api/handlers"
-	"github.com/Ahmeds-Library/Chat-App/internal/auth"
+	"github.com/Ahmeds-Library/Chat-App/internal/api/auth_handler"
+	"github.com/Ahmeds-Library/Chat-App/internal/middleware"
 	"github.com/gin-gonic/gin"
 )
 
 func RoutesHandler(r *gin.Engine) {
 
-	r.POST("/signup", handlers.Signup)
-	r.POST("/login", handlers.Login)
-	r.POST("/refresh_key", handlers.Refresh_Key)
-	r.POST("/auth", auth.AuthMiddleware(), handlers.Autherized_Endpoint)
+	r.POST("/signup", auth_handler.Signup)
+	r.POST("/login", auth_handler.Login)
+	r.POST("/refresh_key", auth_handler.Refresh_Key)
+	r.POST("/auth", middleware.AuthMiddleware(), auth_handler.Autherized_Endpoint)
 }

@@ -1,9 +1,9 @@
-package handlers
+package auth_handler
 
 import (
 	"net/http"
 
-	"github.com/Ahmeds-Library/Chat-App/internal/auth"
+	"github.com/Ahmeds-Library/Chat-App/internal/middleware"
 	"github.com/Ahmeds-Library/Chat-App/internal/utils"
 	"github.com/gin-gonic/gin"
 )
@@ -17,7 +17,7 @@ func Refresh_Key(c *gin.Context) {
 
 	tokenString = tokenString[len("Bearer "):]
 
-	if err := auth.VerifyToken(tokenString); err != nil {
+	if err := middleware.VerifyToken(tokenString); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token", "details": err.Error()})
 		return
 	}
@@ -49,7 +49,7 @@ func Refresh_Key(c *gin.Context) {
 		return
 	}
 
-	accesstoken, err := auth.Create_Access_Token(userID)
+	accesstoken, err := middleware.Create_Access_Token(userID)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to create refresh token", "details": err.Error()})
