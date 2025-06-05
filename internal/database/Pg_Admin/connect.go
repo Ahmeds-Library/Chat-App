@@ -1,4 +1,4 @@
-package database
+package pg_admin
 
 import (
 	"database/sql"
@@ -12,7 +12,7 @@ import (
 
 var Db *sql.DB
 
-func ConnectDatabase() {
+func ConnectPgAdminDatabase() {
 
 	utils.LoadEnvVariables()
 

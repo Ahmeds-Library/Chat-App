@@ -3,7 +3,7 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/Ahmeds-Library/Chat-App/internal/database"
+	pg_admin "github.com/Ahmeds-Library/Chat-App/internal/database/Pg_Admin"
 	"github.com/Ahmeds-Library/Chat-App/internal/models"
 	"github.com/gin-gonic/gin"
 )
@@ -16,7 +16,7 @@ func Signup(c *gin.Context) {
 		return
 	}
 
-	err := database.CreateUser(u.Username, u.Password, u.Number)
+	err := pg_admin.CreateUser(u.Username, u.Password, u.Number)
 	if err != nil {
 		if err.Error() == "username already exists" {
 			c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})

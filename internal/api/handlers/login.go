@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/Ahmeds-Library/Chat-App/internal/auth"
-	"github.com/Ahmeds-Library/Chat-App/internal/database"
+	pg_admin "github.com/Ahmeds-Library/Chat-App/internal/database/Pg_Admin"
 	"github.com/Ahmeds-Library/Chat-App/internal/models"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -18,7 +18,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	dbPassword, dbID, err := database.GetUserCredentials(u.Username)
+	dbPassword, dbID, err := pg_admin.GetUserCredentials(u.Username)
 	if err != nil {
 		if err.Error() == "user not found" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found", "details": err.Error()})

@@ -2,7 +2,6 @@ package utils
 
 import (
 	"log"
-	"os"
 
 	"github.com/joho/godotenv"
 )
@@ -14,6 +13,6 @@ func LoadEnvVariables() {
 	}
 }
 
-func GetEnvVariable(key string) string {
-	return os.Getenv(key)
-}
+// func GetEnvVariable(key string) string {
+// 	return os.Getenv(key)
+// }
