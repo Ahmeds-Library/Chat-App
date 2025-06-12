@@ -1,6 +1,7 @@
-package handlers
+package message_handler
 
 import (
+	"fmt"
 	"net/http"
 
 	mongo_db "github.com/Ahmeds-Library/Chat-App/internal/database/Mongo_DB"
@@ -19,6 +20,15 @@ func SendMessageHandler(mongoClient *mongo.Client) gin.HandlerFunc {
 			return
 		}
 
+		token_type, ok := claims["token_type"].(string)
+
+		fmt.Println("Token Type:", token_type)
+
+		if !ok || token_type != "Access" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token type", "details": "Use a valid access token"})
+			return
+		}
+
 		senderID, ok := claims["id"].(string)
 		if !ok {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
@@ -33,11 +43,10 @@ func SendMessageHandler(mongoClient *mongo.Client) gin.HandlerFunc {
 
 		receiver, err := pg_admin.GetUserByPhone(req.Receiver_Number)
 		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Receiver not found"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "Receiver not found", "details": err.Error()})
 			return
 		}
 		mongo_db.SaveMessage(c, senderID, *receiver, *req)
-				
+
 	}
 }
-

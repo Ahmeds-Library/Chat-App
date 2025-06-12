@@ -18,8 +18,6 @@ func ConnectMongoDatabase() (*mongo.Client, error) {
 
 	MONGO_URI := os.Getenv("MONGO_URI")
 
-	fmt.Println("Mongo_URI:", MONGO_URI)
-
 	clientOptions := options.Client().ApplyURI(MONGO_URI)
 	client, err := mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
@@ -29,9 +27,12 @@ func ConnectMongoDatabase() (*mongo.Client, error) {
 	err = client.Ping(context.Background(), nil)
 	if err != nil {
 		log.Fatal(err)
-	} else {
-		fmt.Println("Connected to mongoDB!!!")
-	}
+	} 
+
+	fmt.Println("Connected to mongoDB!!!")
+	fmt.Println("Mongo_URI:", MONGO_URI)
+
 	return client, nil
+
 }
 

@@ -29,7 +29,7 @@ func Create_Access_Token(id string) (string, error) {
 		jwt.MapClaims{
 			"id": id,
 			"token_type": "Access",
-			"exp": time.Now().Add(time.Minute * 10).Unix(),
+			"exp": time.Now().Add(time.Minute * 30).Unix(),
 		})
 
 	tokenString, err := token.SignedString(SecretKey)

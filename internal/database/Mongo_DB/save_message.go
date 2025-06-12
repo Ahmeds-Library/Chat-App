@@ -15,7 +15,7 @@ func SaveMessage(c *gin.Context, senderID string, receiver models.User, req mode
 		ID:         primitive.NewObjectID(),
 		SenderID:   senderID,
 		ReceiverID: receiver.ID,
-		Content:    req.Message,
+		Message:    req.Message,
 		CreatedAt:  time.Now(),
 	}
 
