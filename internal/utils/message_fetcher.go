@@ -10,7 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func Message_Fetcher(mongoClient *mongo.Client, senderID, receiverID string) ([]models.Message, error) {
+func Message_Fetcher(mongoClient *mongo.Client, senderID, receiverID string) ([]models.Save_Message, error) {
 	collection := mongoClient.Database("Chat-App").Collection("messages")
 
 	filter := bson.M{
@@ -27,9 +27,9 @@ func Message_Fetcher(mongoClient *mongo.Client, senderID, receiverID string) ([]
 	}
 	defer cursor.Close(context.Background())
 
-	var messages []models.Message
+	var messages []models.Save_Message
 	for cursor.Next(context.Background()) {
-		var msg models.Message
+		var msg models.Save_Message
 		if err := cursor.Decode(&msg); err != nil {
 			log.Println("Error decoding message:", err)
 			return nil, err
@@ -38,9 +38,8 @@ func Message_Fetcher(mongoClient *mongo.Client, senderID, receiverID string) ([]
 	}
 
 	if len(messages) == 0 {
-		return nil,	 fmt.Errorf("no messages found")
+		return nil, fmt.Errorf("no messages found")
 	}
 
 	return messages, nil
 }
-

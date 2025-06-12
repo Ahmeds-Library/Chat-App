@@ -11,7 +11,7 @@ import (
 )
 
 func SaveMessage(c *gin.Context, senderID string, receiver models.User, req models.Request_Message) {
-	message := models.Message{
+	message := models.Save_Message{
 		ID:         primitive.NewObjectID(),
 		SenderID:   senderID,
 		ReceiverID: receiver.ID,

@@ -3,7 +3,6 @@ package pg_admin
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 
 	"github.com/Ahmeds-Library/Chat-App/internal/models"
 )
@@ -22,11 +21,9 @@ func GetUserByPhone(phone string) (*models.User, error) {
 	row := Db.QueryRow("SELECT id, username, number FROM users WHERE number=$1", phone)
 	if err := row.Scan(&user.ID, &user.Username, &user.Number); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			fmt.Println(err, "25")
 			return nil, errors.New("user not found")
 		}
 		return nil, err
 	}
 	return &user, nil
 }
-
