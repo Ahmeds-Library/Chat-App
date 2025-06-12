@@ -1,4 +1,4 @@
-package auth
+package middleware
 
 import (
 	"time"
@@ -22,14 +22,14 @@ func Create_Refresh_Token(id, username, number string) (string, error) {
 	}
 
 	return tokenString, nil
-}
+}	
 
 func Create_Access_Token(id string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512,
 		jwt.MapClaims{
 			"id": id,
 			"token_type": "Access",
-			"exp": time.Now().Add(time.Minute * 10).Unix(),
+			"exp": time.Now().Add(time.Minute * 30).Unix(),
 		})
 
 	tokenString, err := token.SignedString(SecretKey)
