@@ -1,7 +1,6 @@
 package message_handler
 
 import (
-	"fmt"
 	"net/http"
 
 	mongo_db "github.com/Ahmeds-Library/Chat-App/internal/database/Mongo_DB"
@@ -18,8 +17,6 @@ func Get_Message(C *gin.Context) {
 	}
 
 	token_type, ok := claims["token_type"].(string)
-
-	fmt.Println("Token Type:", token_type)
 
 	if !ok || token_type != "Access" {
 		C.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token type", "details": "Use a valid access token"})
@@ -44,12 +41,12 @@ func Get_Message(C *gin.Context) {
 		return
 	}
 
-
-	mongoClient, err := mongo_db.ConnectMongoDatabase()
-	if err != nil {
-		C.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to connect to MongoDB", "details": err.Error()})
+	if senderID.ID == receiverID {
+		C.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": "Sender and receiver cannot be the same"})
 		return
 	}
+
+	mongoClient, err := mongo_db.ConnectMongoDatabase()
 
 	messages, err := utils.Message_Fetcher(mongoClient, senderID.ID, receiverID)
 
@@ -60,4 +57,3 @@ func Get_Message(C *gin.Context) {
 	C.JSON(http.StatusOK, messages)
 
 }
-
