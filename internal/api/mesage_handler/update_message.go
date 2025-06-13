@@ -31,18 +31,16 @@ func UpdateMessageHandler(c *gin.Context) {
 	}
 
 	senderID := claims["id"].(string)
-
 	updatedTime := time.Now()
 
-	mongoclient, err := mongo_db.ConnectMongoDatabase()
-
+	mongoClient, err := mongo_db.ConnectMongoDatabase()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to connect to database", "details": err.Error()})
 		return
 	}
 
 	err = mongo_db.Update_Message(
-		mongoclient.Database("Chat-App"),
+		mongoClient.Database("Chat-App"),
 		req.ID,
 		senderID,
 		req.New_Message,
@@ -54,5 +52,5 @@ func UpdateMessageHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Message updated successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "Message updated successfully", "details": req})
 }
