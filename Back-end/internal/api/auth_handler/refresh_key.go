@@ -10,20 +10,10 @@ import (
 
 func Refresh_Key(c *gin.Context) {
 	tokenString := c.GetHeader("Authorization")
-	if tokenString == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "No token provided"})
-		return
-	}
-
-	tokenString = tokenString[len("Bearer "):]
 
 	if err := middleware.VerifyToken(tokenString); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token", "details": err.Error()})
 		return
-	}
-
-	if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
-		tokenString = tokenString[7:]
 	}
 
 	claims, err := utils.DecodeToken(tokenString)
