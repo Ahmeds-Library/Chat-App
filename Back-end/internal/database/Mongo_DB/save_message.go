@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Ahmeds-Library/Chat-App/internal/models"
+	"github.com/Ahmeds-Library/Chat-App/internal/websocket"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -32,5 +33,8 @@ func SaveMessage(c *gin.Context, senderID string, receiver models.User, req mode
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": message.Message , "status" : "Message sent successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": message.Message, "status": "Message sent successfully"})
+
+	
+	websocket.WS_HUB.Broadcast <- message
 }
