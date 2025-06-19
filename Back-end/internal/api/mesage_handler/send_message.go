@@ -46,6 +46,11 @@ func SendMessageHandler(mongoClient *mongo.Client) gin.HandlerFunc {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Receiver not found", "details": err.Error()})
 			return
 		}
+		if senderID == receiver.ID {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": "Sender and receiver cannot be the same"})
+			return
+		}
+
 		mongo_db.SaveMessage(c, senderID, *receiver, *req)
 
 	}

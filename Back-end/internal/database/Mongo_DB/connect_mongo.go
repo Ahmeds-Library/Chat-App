@@ -3,36 +3,36 @@ package mongo_db
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
+	"time"
 
 	"github.com/Ahmeds-Library/Chat-App/internal/utils"
-	_ "github.com/lib/pq"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func ConnectMongoDatabase() (*mongo.Client, error) {
+var MongoClient *mongo.Client
 
+func ConnectMongoDatabase() error {
 	utils.LoadEnvVariables()
 
 	MONGO_URI := os.Getenv("MONGO_URI")
 
-	clientOptions := options.Client().ApplyURI(MONGO_URI)
+	clientOptions := options.Client().
+		ApplyURI(MONGO_URI).
+		SetConnectTimeout(10 * time.Second)
+
 	client, err := mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	err = client.Ping(context.Background(), nil)
 	if err != nil {
-		log.Fatal(err)
-	} 
+		return err
+	}
 
-	fmt.Println("Connected to mongoDB!!!")
-	fmt.Println("Mongo_URI:", MONGO_URI)
-
-	return client, nil
-
+	fmt.Println("✅ Connected to MongoDB!")
+	MongoClient = client
+	return nil 
 }
-

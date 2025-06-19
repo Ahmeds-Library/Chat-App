@@ -10,54 +10,48 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Get_Message(C *gin.Context) {
-	claims, ok := utils.ValidateToken(C)
+func Get_Message(c *gin.Context) {
+	claims, ok := utils.ValidateToken(c)
 	if !ok {
 		return
 	}
 
 	token_type, ok := claims["token_type"].(string)
-
 	if !ok || token_type != "Access" {
-		C.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token type", "details": "Use a valid access token"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token type", "details": "Use a valid access token"})
 		return
 	}
 
 	senderID, ok := claims["id"].(string)
 	if !ok {
-		C.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token", "details": "User ID not found in token"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token", "details": "User ID not found in token"})
 		return
 	}
 
 	var req *models.Get_Message
-	if err := C.ShouldBindJSON(&req); err != nil {
-		C.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body", "details": err.Error()})
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body", "details": err.Error()})
 		return
 	}
 
 	receiverID, err := pg_admin.GetUserByPhone(req.Receiver_Number)
 	if err != nil {
-		C.JSON(http.StatusNotFound, gin.H{"error": "Sender not found", "details": err.Error()})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Receiver not found", "details": err.Error()})
 		return
 	}
 
 	if senderID == receiverID.ID {
-		C.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": "Sender and receiver cannot be the same"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": "Sender and receiver cannot be the same"})
 		return
 	}
 
-	mongoClient, err := mongo_db.ConnectMongoDatabase()
+	db := mongo_db.MongoClient
+
+	messages, err := utils.Message_Fetcher(db, senderID, receiverID.ID)
 	if err != nil {
-		C.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to connect to MongoDB", "details": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get messages", "details": err.Error()})
 		return
 	}
 
-	messages, err := utils.Message_Fetcher(mongoClient, senderID, receiverID.ID)
-
-	if err != nil {
-		C.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get messages", "details": err.Error()})
-		return
-	}
-	C.JSON(http.StatusOK, messages)
-
+	c.JSON(http.StatusOK, messages)
 }

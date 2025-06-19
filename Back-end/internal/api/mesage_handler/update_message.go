@@ -19,7 +19,6 @@ func UpdateMessageHandler(c *gin.Context) {
 	}
 
 	token_type, ok := claims["token_type"].(string)
-
 	if !ok || token_type != "Access" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token type", "details": "Use a valid access token"})
 		return
@@ -33,14 +32,10 @@ func UpdateMessageHandler(c *gin.Context) {
 	senderID := claims["id"].(string)
 	updatedTime := time.Now()
 
-	mongoClient, err := mongo_db.ConnectMongoDatabase()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to connect to database", "details": err.Error()})
-		return
-	}
+	db := mongo_db.MongoClient.Database("Chat-App")
 
-	err = mongo_db.Update_Message(
-		mongoClient.Database("Chat-App"),
+	err := mongo_db.Update_Message(
+		db,
 		req.ID,
 		senderID,
 		req.New_Message,
