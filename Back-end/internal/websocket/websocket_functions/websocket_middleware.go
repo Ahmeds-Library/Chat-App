@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func WebSocket_Middleware() gin.HandlerFunc {		
+func WebSocket_Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		fmt.Println("WebSocket Middleware	: Checking token...")
 		tokenString := c.Query("token")

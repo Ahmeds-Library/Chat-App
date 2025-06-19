@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/Ahmeds-Library/Chat-App/internal/websocket"
+	websocket "github.com/Ahmeds-Library/Chat-App/internal/websocket/websocket_functions"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -24,8 +24,6 @@ func main() {
 	router.GET("/ws", websocket.WebSocket_Middleware(), websocket.HandleWebSocket)
 
 	fmt.Println("26")
-
-	go websocket.StartBroadcast()
 
 	log.Println("WebSocket server started on :9000")
 	router.Run(":9000")

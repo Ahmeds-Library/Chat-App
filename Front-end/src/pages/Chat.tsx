@@ -13,7 +13,6 @@ const Chat = () => {
   const mainRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Enhanced GSAP entrance animations
     if (headerRef.current && mainRef.current) {
       const tl = gsap.timeline();
       
@@ -64,9 +63,9 @@ const Chat = () => {
 Start chatting with your contacts! 💬✨`;
 
   return (
-    <div className="h-screen bg-gradient-to-br from-background via-background to-muted/20 flex flex-col chat-container transition-all duration-500 overflow-hidden">
+    <div className="h-screen w-full bg-gradient-to-br from-background via-background to-muted/20 flex flex-col chat-container transition-all duration-500 overflow-hidden">
       {/* Header */}
-      <header ref={headerRef} className="border-b border-border/50 bg-card/90 backdrop-blur-xl z-40 shadow-lg flex-shrink-0">
+      <header ref={headerRef} className="border-b border-border/50 bg-card/90 backdrop-blur-xl z-[70] shadow-lg flex-shrink-0 sticky top-0">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className="w-12 h-12 bg-gradient-to-r from-green-500 via-green-600 to-green-700 rounded-2xl flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg">
@@ -102,12 +101,16 @@ Start chatting with your contacts! 💬✨`;
       </header>
 
       {/* Main Chat Interface */}
-      <div ref={mainRef} className="flex-1 flex overflow-hidden min-h-0">
+      <main 
+        ref={mainRef} 
+        className="flex-1 flex overflow-hidden min-h-0 relative w-full"
+        style={{ height: 'calc(100vh - 80px)' }}
+      >
         <ChatContainer
           currentUserNumber={user?.number || ''}
           username={user?.username || 'User'}
         />
-      </div>
+      </main>
     </div>
   );
 };
