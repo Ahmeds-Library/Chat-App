@@ -1,4 +1,4 @@
-package main
+package websocket
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func main() {
+func StartWebSocketServer() {
 	router := gin.Default()
 
 	router.Use(cors.New(cors.Config{

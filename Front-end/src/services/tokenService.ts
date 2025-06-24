@@ -1,4 +1,3 @@
-
 import { ENV } from '@/config/env';
 import { TokenPair } from '@/types/auth';
 
@@ -109,6 +108,45 @@ export class TokenService {
     const token = this.tokens?.refresh_token || null;
     console.log('Getting refresh token:', token ? `present (${token.length} chars)` : 'missing');
     return token;
+  }
+
+  // Updated refreshToken method that will use AuthService
+  async refreshToken(): Promise<void> {
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) {
+      throw new Error('No refresh token available');
+    }
+    
+    try {
+      console.log('🔄 Attempting token refresh...');
+      
+      // Import AuthService dynamically to avoid circular dependency
+      const { default: AuthService } = await import('./authService');
+      const authService = AuthService.getInstance();
+      
+      // Call the refresh endpoint
+      const response = await authService.refreshToken();
+      
+      // Extract tokens from response (handle both formats)
+      const tokens = {
+        access_token: response["Access token"] || response.access_token,
+        refresh_token: response["Refresh token"] || response.refresh_token
+      };
+      
+      if (!tokens.access_token || !tokens.refresh_token) {
+        throw new Error('Invalid refresh response: missing tokens');
+      }
+      
+      // Store the new tokens
+      this.setTokens(tokens);
+      console.log('✅ Token refresh successful');
+      
+    } catch (error) {
+      console.error('❌ Token refresh failed:', error);
+      // Clear tokens on refresh failure
+      this.clearTokens();
+      throw error;
+    }
   }
 
   clearTokens(): void {

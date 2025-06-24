@@ -60,17 +60,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser(userData);
           console.log('✅ Session restored for user:', userData.username);
           
-          // Optionally verify token validity with a lightweight API call
-          // This helps catch expired tokens early
+          // Verify token validity with a lightweight API call
           try {
-            // You can add a /verify endpoint or use existing endpoint
             await apiService.getMessages(userData.number);
           } catch (verifyError: any) {
             if (verifyError.status === 401) {
-              console.log('🔄 Token expired, attempting refresh...');
-              await refreshAuth();
+              console.log('🔄 Token expired during verification, will be auto-refreshed by interceptor');
+              // The ApiClient interceptor will handle token refresh automatically
             }
-            // If verification fails for other reasons, continue with stored session
           }
         }
       } else {
@@ -78,7 +75,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     } catch (error) {
       console.error('❌ Failed to initialize auth:', error);
-      // Clear potentially corrupted auth state
       logout();
     } finally {
       setIsLoading(false);
@@ -88,14 +84,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const refreshAuth = async () => {
     try {
       console.log('🔄 Refreshing authentication...');
-      const refreshedTokens = await apiService.refreshToken();
-      
-      const tokens = {
-        access_token: refreshedTokens["Access token"] || refreshedTokens.access_token,
-        refresh_token: refreshedTokens["Refresh token"] || refreshedTokens.refresh_token
-      };
-      
-      tokenService.setTokens(tokens);
+      // Use TokenService's refreshToken method
+      await tokenService.refreshToken();
       console.log('✅ Authentication refreshed successfully');
     } catch (error) {
       console.error('❌ Failed to refresh auth:', error);

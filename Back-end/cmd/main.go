@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func main() {
+func StartAPIServer() {
 	pg_admin.ConnectPgAdminDatabase()
 	err := mongo_db.ConnectMongoDatabase()
 	if err != nil {

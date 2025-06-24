@@ -7,8 +7,7 @@ import { NewChatDialog } from '@/components/chat/NewChatDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { UserSearchBar } from '@/components/chat/UserSearchBar';
 import { UserListItem } from '@/components/chat/UserListItem';
-import { MobileUserListToggle } from '@/components/chat/MobileUserListToggle';
-import { useMobileUserList } from '@/hooks/useMobileUserList';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface UserListProps {
   users: User[];
@@ -17,6 +16,10 @@ interface UserListProps {
   currentUserNumber: string;
   onNewChatCreated: (user: User, message: Message) => void;
   isLoading?: boolean;
+  mobileMenuState?: {
+    isOpen: boolean;
+    toggleSidebar: () => void;
+  };
 }
 
 export const UserList: React.FC<UserListProps> = ({ 
@@ -25,10 +28,15 @@ export const UserList: React.FC<UserListProps> = ({
   onUserSelect, 
   currentUserNumber,
   onNewChatCreated,
-  isLoading = false
+  isLoading = false,
+  mobileMenuState
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const { isOpen, isMobile, toggleSidebar, closeSidebar } = useMobileUserList();
+  const isMobile = useIsMobile();
+
+  // Use mobile menu state from props or default values
+  const isOpen = mobileMenuState?.isOpen || false;
+  const closeSidebar = () => mobileMenuState?.toggleSidebar?.();
 
   // Filter users based on search query
   const filteredUsers = users.filter(user => 
@@ -38,7 +46,7 @@ export const UserList: React.FC<UserListProps> = ({
 
   const handleUserSelect = (user: User) => {
     onUserSelect(user);
-    if (isMobile) {
+    if (isMobile && closeSidebar) {
       closeSidebar();
     }
   };
@@ -100,8 +108,6 @@ export const UserList: React.FC<UserListProps> = ({
   if (isMobile) {
     return (
       <>
-        <MobileUserListToggle isOpen={isOpen} onToggle={toggleSidebar} />
-
         {/* Mobile Overlay */}
         {isOpen && (
           <div 
@@ -110,12 +116,12 @@ export const UserList: React.FC<UserListProps> = ({
           />
         )}
 
-        {/* Mobile Sidebar */}
+        {/* Mobile Sidebar - Fixed spacing issue */}
         <div className={cn(
           "fixed left-0 top-0 h-full w-72 max-w-[80vw] bg-card border-r border-border z-[55] transform transition-all duration-300 ease-in-out md:hidden flex flex-col shadow-xl",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}>
-          <div className="pt-16 h-full flex flex-col">
+          <div className="pt-4 h-full flex flex-col">
             <UserListContent />
           </div>
         </div>

@@ -5,12 +5,18 @@ import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { InstructionTooltip } from '@/components/ui/instruction-tooltip';
 import { ChatContainer } from '@/components/chat/ChatContainer';
+import { MobileUserListToggle } from '@/components/chat/MobileUserListToggle';
+import { useMobileUserList } from '@/hooks/useMobileUserList';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { gsap } from 'gsap';
 
 const Chat = () => {
   const { user, logout } = useAuth();
   const headerRef = useRef<HTMLHeadElement>(null);
   const mainRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
+  const { isOpen, toggleSidebar } = useMobileUserList();
+  const [selectedUser, setSelectedUser] = React.useState(null);
 
   useEffect(() => {
     if (headerRef.current && mainRef.current) {
@@ -62,53 +68,84 @@ const Chat = () => {
 
 Start chatting with your contacts! 💬✨`;
 
+  // Show header on desktop always, on mobile only when no user is selected
+  const shouldShowHeader = !isMobile || !selectedUser;
+
   return (
     <div className="h-screen w-full bg-gradient-to-br from-background via-background to-muted/20 flex flex-col chat-container transition-all duration-500 overflow-hidden">
-      {/* Header */}
-      <header ref={headerRef} className="border-b border-border/50 bg-card/90 backdrop-blur-xl z-[70] shadow-lg flex-shrink-0 sticky top-0">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-gradient-to-r from-green-500 via-green-600 to-green-700 rounded-2xl flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg">
-              <div className="w-7 h-7 bg-white rounded-xl flex items-center justify-center">
-                <div className="w-4 h-4 bg-gradient-to-r from-green-500 to-green-600 rounded-full animate-pulse"></div>
+      {/* Header - Conditionally rendered */}
+      {shouldShowHeader && (
+        <header ref={headerRef} className="border-b border-border/50 bg-card/90 backdrop-blur-xl z-[70] shadow-lg flex-shrink-0 sticky top-0">
+          <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+            <div className="flex items-center justify-between w-full">
+              {/* Left Section - Mobile Menu + Logo */}
+              <div className="flex items-center space-x-3 flex-1 min-w-0">
+                {/* Mobile Menu Button */}
+                {isMobile && (
+                  <div className="flex-shrink-0">
+                    <MobileUserListToggle isOpen={isOpen} onToggle={toggleSidebar} />
+                  </div>
+                )}
+                
+                {/* App Logo */}
+                <div className="flex items-center space-x-3 flex-shrink-0">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-green-500 via-green-600 to-green-700 rounded-xl sm:rounded-2xl flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg">
+                    <div className="w-6 h-6 sm:w-7 sm:h-7 bg-white rounded-lg sm:rounded-xl flex items-center justify-center">
+                      <div className="w-3 h-3 sm:w-4 sm:h-4 bg-gradient-to-r from-green-500 to-green-600 rounded-full animate-pulse"></div>
+                    </div>
+                  </div>
+                  
+                  {/* App Title and User Info */}
+                  <div className="min-w-0 flex-1">
+                    <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">
+                      ChatApp
+                    </h1>
+                    {/* User Welcome - Always Visible with Proper Spacing */}
+                    <div className="flex items-center space-x-1 mt-0.5">
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                        Welcome, 
+                      </p>
+                      <span className="text-xs sm:text-sm font-medium text-foreground truncate max-w-[120px] sm:max-w-none">
+                        {user?.username}
+                      </span>
+                      <span className="text-xs sm:text-sm text-muted-foreground">!</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Right Section - Actions */}
+              <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
+                <InstructionTooltip 
+                  content={instructionContent}
+                  className="hidden sm:block"
+                />
+                <ThemeToggle />
+                <Button 
+                  variant="outline" 
+                  onClick={handleLogout}
+                  size={isMobile ? "sm" : "default"}
+                  className="hover:bg-destructive hover:text-destructive-foreground transition-all duration-300 hover:scale-105 shadow-sm hover:shadow-md text-xs sm:text-sm"
+                >
+                  Logout
+                </Button>
               </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">
-                ChatApp
-              </h1>
-              <p className="text-sm text-muted-foreground animate-fade-in">
-                Welcome, <span className="font-medium text-foreground">{user?.username}</span>! 
-              </p>
-            </div>
           </div>
-          
-          <div className="flex items-center space-x-3">
-            <InstructionTooltip 
-              content={instructionContent}
-              className="mr-2"
-            />
-            <ThemeToggle />
-            <Button 
-              variant="outline" 
-              onClick={handleLogout}
-              className="hover:bg-destructive hover:text-destructive-foreground transition-all duration-300 hover:scale-105 shadow-sm hover:shadow-md"
-            >
-              Logout
-            </Button>
-          </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       {/* Main Chat Interface */}
       <main 
         ref={mainRef} 
         className="flex-1 flex overflow-hidden min-h-0 relative w-full"
-        style={{ height: 'calc(100vh - 80px)' }}
+        style={{ height: shouldShowHeader ? 'calc(100vh - 80px)' : '100vh' }}
       >
         <ChatContainer
           currentUserNumber={user?.number || ''}
           username={user?.username || 'User'}
+          mobileMenuState={{ isOpen, toggleSidebar }}
+          onUserSelected={setSelectedUser}
         />
       </main>
     </div>

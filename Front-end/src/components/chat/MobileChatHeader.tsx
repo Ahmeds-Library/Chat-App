@@ -3,19 +3,27 @@ import React, { useState } from 'react';
 import { User } from '@/types/chat';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { MobileUserListToggle } from '@/components/chat/MobileUserListToggle';
 import { MoreVertical, Wifi, WifiOff, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface ChatHeaderProps {
+interface MobileChatHeaderProps {
   selectedUser: User;
   connectionStatus?: 'connected' | 'disconnected' | 'connecting';
   messageCount?: number;
+  onBack?: () => void;
+  mobileMenuState?: {
+    isOpen: boolean;
+    toggleSidebar: () => void;
+  };
 }
 
-export const ChatHeader: React.FC<ChatHeaderProps> = ({ 
+export const MobileChatHeader: React.FC<MobileChatHeaderProps> = ({ 
   selectedUser, 
   connectionStatus = 'disconnected',
-  messageCount = 0 
+  messageCount = 0,
+  onBack,
+  mobileMenuState
 }) => {
   const [showDetails, setShowDetails] = useState(false);
 
@@ -56,38 +64,48 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
       {/* Fixed Header Container */}
       <div className="border-b border-gray-200/50 dark:border-gray-700/50 shadow-sm">
         {/* Main Header */}
-        <div className="flex items-center justify-between p-4">
-          {/* User Info Section */}
-          <div className="flex items-center space-x-3 flex-1 min-w-0 mr-4">
-            <Avatar className="w-12 h-12 hover:scale-105 transition-transform duration-200 ring-2 ring-green-200 dark:ring-green-700 flex-shrink-0">
+        <div className="flex items-center justify-between p-3">
+          {/* Left Section */}
+          <div className="flex items-center space-x-3 flex-1 min-w-0 mr-3">
+            {/* Menu Toggle Button */}
+            {mobileMenuState && (
+              <div className="flex-shrink-0">
+                <MobileUserListToggle 
+                  isOpen={mobileMenuState.isOpen} 
+                  onToggle={mobileMenuState.toggleSidebar} 
+                />
+              </div>
+            )}
+            
+            <Avatar className="w-10 h-10 ring-2 ring-green-200 dark:ring-green-700 flex-shrink-0">
               <AvatarImage src="" />
-              <AvatarFallback className="bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold text-lg">
+              <AvatarFallback className="bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold">
                 {selectedUser?.username.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             
-            <div className="flex-1 min-w-0 space-y-1">
+            <div className="flex-1 min-w-0">
               {/* User Name - No truncation, no click handler */}
-              <h3 className="font-semibold text-foreground text-lg">
+              <h3 className="font-semibold text-foreground">
                 {selectedUser?.username}
               </h3>
               
               {/* Inline Status like WhatsApp */}
-              <div className="flex items-center space-x-1">
+              <div className="flex items-center space-x-1 mt-1">
                 <StatusIcon className={cn("w-3 h-3", statusInfo.color)} />
-                <span className={cn("text-sm", statusInfo.color)}>
+                <span className={cn("text-xs", statusInfo.color)}>
                   {statusInfo.text}
                 </span>
               </div>
             </div>
           </div>
           
-          {/* Three Dots Button Only */}
+          {/* Right Actions - Only Three Dots */}
           <div className="flex items-center flex-shrink-0">
             <Button 
               variant="ghost" 
               size="icon" 
-              className="hover:scale-105 transition-transform duration-200 w-10 h-10"
+              className="w-9 h-9"
               onClick={() => setShowDetails(!showDetails)}
               title="More Options"
             >
