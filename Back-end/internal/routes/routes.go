@@ -1,12 +1,14 @@
 package routes
 
 import (
+	"database/sql"
+
 	"github.com/Ahmeds-Library/Chat-App/internal/api/auth_handler"
 	message_handler "github.com/Ahmeds-Library/Chat-App/internal/api/mesage_handler"
+	mongo_db "github.com/Ahmeds-Library/Chat-App/internal/database/Mongo_DB"
 	"github.com/Ahmeds-Library/Chat-App/internal/middleware"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func RoutesHandler(r *gin.Engine) {
@@ -23,8 +25,8 @@ func RoutesHandler(r *gin.Engine) {
 	r.POST("/login", auth_handler.Login)
 	r.POST("/refresh_key", auth_handler.Refresh_Key)
 	r.POST("/get_message", middleware.AuthMiddleware(), message_handler.Get_Message)
-	r.POST("/chat_list", middleware.AuthMiddleware(), message_handler.GetChatListHandler(&mongo.Client{}))
-	r.POST("/message", middleware.AuthMiddleware(), message_handler.SendMessageHandler(&mongo.Client{}))
+	r.GET("/chat_list", middleware.AuthMiddleware(), message_handler.GetChatListHandler(mongo_db.MongoClient, &sql.DB{}))
+	r.POST("/message", middleware.AuthMiddleware(), message_handler.SendMessageHandler(mongo_db.MongoClient))
 	r.POST("/update_message", middleware.AuthMiddleware(), func(c *gin.Context) {
 		message_handler.UpdateMessageHandler(c)
 	})

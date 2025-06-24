@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/Ahmeds-Library/Chat-App/internal/models"
-	"github.com/Ahmeds-Library/Chat-App/internal/websocket"
+	websocket "github.com/Ahmeds-Library/Chat-App/internal/websocket/websocket_functions"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -20,21 +20,17 @@ func SaveMessage(c *gin.Context, senderID string, receiver models.User, req mode
 		CreatedAt:  time.Now(),
 	}
 
-	mongoClient, err := ConnectMongoDatabase()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database connection error", "details": err.Error()})
-		return
-	}
-
-	collection := mongoClient.Database("Chat-App").Collection("messages")
-	_, err = collection.InsertOne(context.Background(), message)
+	collection := MongoClient.Database("Chat-App").Collection("messages")
+	_, err := collection.InsertOne(context.Background(), message)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save message", "details": err.Error()})
 		return
 	}
+	go websocket.GlobalHub.SendMessageToUser(receiver.ID, gin.H{
+		"sender_id":  senderID,
+		"message":    req.Message,
+		"created_at": message.CreatedAt.Format("2006-01-02 15:04:05"),
+	})
 
 	c.JSON(http.StatusOK, gin.H{"message": message.Message, "status": "Message sent successfully"})
-
-	
-	websocket.WS_HUB.Broadcast <- message
 }

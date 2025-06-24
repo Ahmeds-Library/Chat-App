@@ -1,20 +1,18 @@
 package message_handler
 
 import (
-	"context"
+	"database/sql"
 	"net/http"
-	"time"
 
 	mongo_db "github.com/Ahmeds-Library/Chat-App/internal/database/Mongo_DB"
+	pg_admin "github.com/Ahmeds-Library/Chat-App/internal/database/Pg_Admin"
 	"github.com/Ahmeds-Library/Chat-App/internal/models"
 	"github.com/Ahmeds-Library/Chat-App/internal/utils"
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func GetChatListHandler(mongoClient *mongo.Client) gin.HandlerFunc {
+func GetChatListHandler(mongoClient *mongo.Client, pgConn *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		claims, valid := utils.ValidateToken(c)
@@ -24,94 +22,36 @@ func GetChatListHandler(mongoClient *mongo.Client) gin.HandlerFunc {
 
 		userID, ok := claims["id"].(string)
 		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token", "details": "User ID not found in token"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 			return
 		}
 
-		mongoClient, err := mongo_db.ConnectMongoDatabase()
+		database := mongoClient.Database("Chat-App")
+		chatPartners, err := mongo_db.GetChatPartners(database, userID)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to connect to MongoDB", "details": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Mongo error: " + err.Error()})
 			return
 		}
-		collection := mongoClient.Database("Chat-App").Collection("messages")
-		pipeline := mongo.Pipeline{
-			{{Key: "$match", Value: bson.D{
-				{Key: "$or", Value: bson.A{
-					bson.D{{Key: "sender_id", Value: userID}},
-					bson.D{{Key: "receiver_id", Value: userID}},
-				}},
-			}}},
-			{{Key: "$project", Value: bson.D{
-				{Key: "partner_id", Value: bson.D{
-					{Key: "$cond", Value: bson.A{
-						bson.D{{Key: "$eq", Value: bson.A{"$sender_id", userID}}},
-						"$receiver_id",
-						"$sender_id",
-					}},
-				}},
-				{Key: "content", Value: "$content"},
-				{Key: "created_at", Value: "$created_at"},
-			}}},
-			{{Key: "$sort", Value: bson.D{
-				{Key: "created_at", Value: -1},
-			}}},
-			{{Key: "$group", Value: bson.D{
-				{Key: "_id", Value: "$partner_id"},
-				{Key: "last_message", Value: bson.D{{Key: "$first", Value: "$content"}}},
-				{Key: "last_message_at", Value: bson.D{{Key: "$first", Value: "$created_at"}}},
-			}}},
-			{{Key: "$sort", Value: bson.D{
-				{Key: "last_message_at", Value: -1},
-			}}},
-		}
 
-		cursor, err := collection.Aggregate(context.Background(), pipeline)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error at 71": err.Error()})
-			return
-		}
-		defer cursor.Close(context.Background())
+		var fullList []models.Chatlist_Item
 
-		var chatList []models.ChatListItem
+		for _, chat := range chatPartners {
 
-		for cursor.Next(context.Background()) {
-			var doc bson.M
-			if err := cursor.Decode(&doc); err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error decoding result": err.Error()})
+			userData, err := pg_admin.GetDataFromID(chat.PartnerID)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Postgres error: " + err.Error()})
 				return
 			}
 
-			var partnerID string
-			switch v := doc["_id"].(type) {
-			case string:
-				partnerID = v
-			case primitive.ObjectID:
-				partnerID = v.Hex()
-			default:
-				partnerID = ""
-			}
-
-			var lastMessage string
-			if lm, ok := doc["last_message"].(string); ok {
-				lastMessage = lm
-			} else {
-				lastMessage = ""
-			}
-
-			var lastMessageAt time.Time
-			if lma, ok := doc["last_message_at"].(primitive.DateTime); ok {
-				lastMessageAt = lma.Time()
-			} else {
-				lastMessageAt = time.Time{}
-			}
-
-			chatList = append(chatList, models.ChatListItem{
-				PartnerID:     partnerID,
-				LastMessage:   lastMessage,
-				LastMessageAt: lastMessageAt,
+			fullList = append(fullList, models.Chatlist_Item{
+				PartnerID:     chat.PartnerID,
+				PartnerName:   userData.Username,
+				PartnerNumber: userData.Number,
+				LastMessage:   chat.LastMessage,
+				LastMessageAt: chat.LastMessageAt.Format("2006-01-02 15:04:05"),
 			})
 		}
 
-		c.JSON(http.StatusOK, chatList)
+		c.JSON(http.StatusOK, fullList)
 	}
 }

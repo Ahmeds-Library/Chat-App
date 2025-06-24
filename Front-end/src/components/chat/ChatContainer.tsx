@@ -5,6 +5,7 @@ import { UserList } from '@/components/chat/UserList';
 import { EnhancedChatArea } from '@/components/chat/EnhancedChatArea';
 import { WelcomeMessage } from '@/components/chat/WelcomeMessage';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useChatList } from '@/hooks/useChatList';
 import { gsap } from 'gsap';
 
 interface ChatContainerProps {
@@ -16,12 +17,13 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   currentUserNumber,
   username
 }) => {
-  const [users, setUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showWelcome, setShowWelcome] = useState(true);
   const [initialMessage, setInitialMessage] = useState<Message | null>(null);
   const mainRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
+  
+  const { chatList, isLoading, updateChatItem, addNewChatItem } = useChatList();
 
   const handleUserSelect = (selectedUser: User) => {
     setSelectedUser(selectedUser);
@@ -37,24 +39,9 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   };
 
   const handleMessageSent = (userNumber: string, message: Message) => {
-    // Update user list - no local storage, just in-memory
-    setUsers(prev => {
-      const existingUserIndex = prev.findIndex(u => u.number === userNumber);
-      if (existingUserIndex >= 0) {
-        const updatedUsers = [...prev];
-        updatedUsers[existingUserIndex] = {
-          ...updatedUsers[existingUserIndex],
-          lastMessage: message.content,
-          lastMessageTime: message.timestamp
-        };
-        // Move to top
-        const [updatedUser] = updatedUsers.splice(existingUserIndex, 1);
-        return [updatedUser, ...updatedUsers];
-      }
-      return prev;
-    });
-    
-    console.log('✅ Message sent, updated user list in memory');
+    // Update chat list with new message
+    updateChatItem(userNumber, message.content, message.timestamp);
+    console.log('✅ Message sent, updated chat list');
   };
 
   const handleNewChatCreated = (newUser: User, message: Message) => {
@@ -63,18 +50,14 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
       message: message
     });
 
-    setUsers(prev => {
-      const existingUserIndex = prev.findIndex(u => u.number === newUser.number);
-      if (existingUserIndex >= 0) {
-        const updatedUsers = [...prev];
-        updatedUsers[existingUserIndex] = { ...updatedUsers[existingUserIndex], ...newUser };
-        const [updatedUser] = updatedUsers.splice(existingUserIndex, 1);
-        return [updatedUser, ...updatedUsers];
-      } else {
-        return [newUser, ...prev];
-      }
-    });
-
+    // Add or update the chat item
+    const userWithMessage: User = {
+      ...newUser,
+      lastMessage: message.content,
+      lastMessageTime: message.timestamp
+    };
+    
+    addNewChatItem(userWithMessage);
     setInitialMessage(message);
     setSelectedUser(newUser);
     setShowWelcome(false);
@@ -83,13 +66,14 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   };
 
   return (
-    <div ref={mainRef} className="flex-1 flex overflow-hidden min-h-0">
+    <div ref={mainRef} className="flex h-full w-full overflow-hidden">
       <UserList
-        users={users}
+        users={chatList}
         selectedUser={selectedUser}
         onUserSelect={handleUserSelect}
         currentUserNumber={currentUserNumber}
         onNewChatCreated={handleNewChatCreated}
+        isLoading={isLoading}
       />
       
       <div className="chat-transition flex-1 flex flex-col min-w-0 overflow-hidden">
