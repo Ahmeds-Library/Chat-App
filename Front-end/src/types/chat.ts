@@ -1,3 +1,4 @@
+
 export interface User {
   id: string;
   username: string;
@@ -38,7 +39,15 @@ export interface SendMessageRequest {
   content: string;
 }
 
+// Updated to match Go backend struct
 export interface UpdateMessageRequest {
+  id: string;
+  new_message: string;
+  updated_at: string;
+}
+
+// Legacy interface for internal use
+export interface UpdateMessageInternalRequest {
   messageId: string;
   content: string;
 }

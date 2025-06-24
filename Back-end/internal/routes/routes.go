@@ -14,7 +14,7 @@ import (
 func RoutesHandler(r *gin.Engine) {
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:8080"},
+		AllowOrigins:     []string{"http://localhost:8080", "http://192.168.1.69:8080/"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type"},
 		ExposeHeaders:    []string{"Content-Length"},

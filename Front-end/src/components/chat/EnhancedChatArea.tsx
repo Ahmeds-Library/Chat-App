@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { User, Message } from '@/types/chat';
 import { ChatHeader } from '@/components/chat/ChatHeader';
+import { MobileChatHeader } from '@/components/chat/MobileChatHeader';
 import { MessageInput } from '@/components/chat/MessageInput';
 import { MessagesContainer } from '@/components/chat/MessagesContainer';
 import { EmptyState } from '@/components/chat/EmptyState';
@@ -15,6 +16,11 @@ interface EnhancedChatAreaProps {
   currentUserNumber: string;
   onMessageSent: (userNumber: string, message: Message) => void;
   initialMessage?: Message | null;
+  onBack?: () => void;
+  mobileMenuState?: {
+    isOpen: boolean;
+    toggleSidebar: () => void;
+  };
 }
 
 export const EnhancedChatArea: React.FC<EnhancedChatAreaProps> = ({
@@ -22,6 +28,8 @@ export const EnhancedChatArea: React.FC<EnhancedChatAreaProps> = ({
   currentUserNumber,
   onMessageSent,
   initialMessage = null,
+  onBack,
+  mobileMenuState
 }) => {
   const [newMessage, setNewMessage] = useState('');
   const isMobile = useIsMobile();
@@ -31,7 +39,9 @@ export const EnhancedChatArea: React.FC<EnhancedChatAreaProps> = ({
     isLoading,
     isSending,
     sendMessage,
-    editMessage
+    editMessage,
+    connectionStatus,
+    messageCount
   } = useMessages({
     selectedUser,
     currentUserNumber,
@@ -56,8 +66,7 @@ export const EnhancedChatArea: React.FC<EnhancedChatAreaProps> = ({
     try {
       await sendMessage(messageContent);
     } catch (error) {
-      // Error already handled in useMessages hook
-      setNewMessage(messageContent); // Restore message on error
+      setNewMessage(messageContent);
     }
   };
 
@@ -72,11 +81,29 @@ export const EnhancedChatArea: React.FC<EnhancedChatAreaProps> = ({
 
   return (
     <div className={cn(
-      "flex-1 flex flex-col bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 dark:from-gray-900 dark:via-blue-900/20 dark:to-purple-900/20",
+      "flex-1 flex flex-col h-full bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 dark:from-gray-900 dark:via-blue-900/20 dark:to-purple-900/20",
       isMobile && "ml-0"
     )}>
-      <ChatHeader selectedUser={selectedUser} />
+      {/* Fixed Header Section */}
+      <div className="flex-shrink-0 sticky top-0 z-30 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl">
+        {isMobile ? (
+          <MobileChatHeader 
+            selectedUser={selectedUser}
+            connectionStatus={connectionStatus}
+            messageCount={messageCount}
+            onBack={onBack}
+            mobileMenuState={mobileMenuState}
+          />
+        ) : (
+          <ChatHeader 
+            selectedUser={selectedUser}
+            connectionStatus={connectionStatus}
+            messageCount={messageCount}
+          />
+        )}
+      </div>
       
+      {/* Chat Content - Scrollable Messages */}
       <div className="flex-1 flex flex-col min-h-0">
         <MessagesContainer
           messages={messages}
@@ -90,12 +117,15 @@ export const EnhancedChatArea: React.FC<EnhancedChatAreaProps> = ({
           setEditingText={updateEditingText}
         />
 
-        <MessageInput
-          newMessage={newMessage}
-          setNewMessage={setNewMessage}
-          onSendMessage={handleSendMessage}
-          isSending={isSending}
-        />
+        {/* Fixed Message Input */}
+        <div className="flex-shrink-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-700/50">
+          <MessageInput
+            newMessage={newMessage}
+            setNewMessage={setNewMessage}
+            onSendMessage={handleSendMessage}
+            isSending={isSending}
+          />
+        </div>
       </div>
     </div>
   );

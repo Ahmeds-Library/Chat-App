@@ -27,7 +27,9 @@ func SaveMessage(c *gin.Context, senderID string, receiver models.User, req mode
 		return
 	}
 	go websocket.GlobalHub.SendMessageToUser(receiver.ID, gin.H{
-		"sender_id":  senderID,
+		"id":         message.ID.Hex(),
+		"sender_id":  senderID,	
+		"receiver_id": receiver.ID,
 		"message":    req.Message,
 		"created_at": message.CreatedAt.Format("2006-01-02 15:04:05"),
 	})

@@ -1,19 +1,27 @@
-
-import axios, { AxiosInstance, AxiosError } from 'axios';
+import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { ENV } from '@/config/env';
 import { TokenService } from './tokenService';
-import { toast } from '@/hooks/use-toast';
+
+export interface ApiResponse<T = any> {
+  data: T;
+  message?: string;
+  status?: string;
+}
+
+export interface ApiError {
+  message: string;
+  status?: number;
+  details?: string;
+}
 
 class ApiClient {
   private static instance: ApiClient;
   private axiosInstance: AxiosInstance;
   private tokenService: TokenService;
-  private isRefreshing = false;
-  private failedQueue: Array<{ resolve: Function; reject: Function }> = [];
-  private retryAttempts = new Map<string, number>();
 
   private constructor() {
     this.tokenService = TokenService.getInstance();
+    
     this.axiosInstance = axios.create({
       baseURL: ENV.API_BASE_URL,
       timeout: 30000,
@@ -33,216 +41,195 @@ class ApiClient {
   }
 
   private setupInterceptors(): void {
+    // Request interceptor
     this.axiosInstance.interceptors.request.use(
       (config) => {
         const token = this.tokenService.getAccessToken();
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
-          console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`, {
-            hasToken: true,
-            tokenLength: token.length,
-            timestamp: new Date().toISOString()
-          });
-        } else {
-          console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`, {
-            hasToken: false,
-            timestamp: new Date().toISOString()
-          });
         }
         return config;
       },
       (error) => {
-        console.error('❌ Request interceptor error:', error);
+        console.error('🚨 Request Error:', error);
         return Promise.reject(error);
       }
     );
 
+    // Enhanced response interceptor with detailed error logging
     this.axiosInstance.interceptors.response.use(
-      (response) => {
-        const requestKey = `${response.config.method?.toUpperCase()}_${response.config.url}`;
-        this.retryAttempts.delete(requestKey);
-        
-        console.log(`✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`, {
+      (response: AxiosResponse) => {
+        // Log successful responses for debugging
+        console.log('✅ API Success:', {
+          url: response.config.url,
+          method: response.config.method,
           status: response.status,
-          timestamp: new Date().toISOString()
+          data: response.data
         });
         return response;
       },
-      async (error: AxiosError) => {
-        const originalRequest = error.config as any;
-        const requestKey = `${originalRequest?.method?.toUpperCase()}_${originalRequest?.url}`;
-
-        console.error(`❌ API Error: ${originalRequest?.method?.toUpperCase()} ${originalRequest?.url}`, {
+      async (error) => {
+        // Enhanced error logging
+        console.error('🚨 Backend Error Details:', {
+          url: error.config?.url,
+          method: error.config?.method,
           status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
           message: error.message,
-          timestamp: new Date().toISOString()
+          headers: error.response?.headers
         });
 
+        const originalRequest = error.config;
+        
         if (error.response?.status === 401 && !originalRequest._retry) {
-          if (this.isRefreshing) {
-            return new Promise((resolve, reject) => {
-              this.failedQueue.push({ resolve, reject });
-            }).then(() => {
-              return this.axiosInstance(originalRequest);
-            });
-          }
-
+          console.warn('🔒 Token expired, attempting refresh...');
           originalRequest._retry = true;
-          this.isRefreshing = true;
-
+          
           try {
-            const refreshToken = this.tokenService.getRefreshToken();
-            if (!refreshToken) {
-              throw new Error('No refresh token available');
+            await this.tokenService.refreshToken();
+            
+            const newToken = this.tokenService.getAccessToken();
+            if (newToken) {
+              originalRequest.headers.Authorization = `Bearer ${newToken}`;
+              return this.axiosInstance.request(originalRequest);
             }
-
-            console.log('🔄 Attempting token refresh...');
-            const response = await axios.post(`${ENV.API_BASE_URL}/refresh_key`, {}, {
-              headers: {
-                'Authorization': `Bearer ${refreshToken}`,
-                'Content-Type': 'application/json',
-              }
-            });
-
-            const newTokens = response.data;
-            this.tokenService.setTokens(newTokens);
-            console.log('✅ Token refresh successful');
-
-            this.processQueue(null);
-            return this.axiosInstance(originalRequest);
           } catch (refreshError) {
             console.error('❌ Token refresh failed:', refreshError);
-            this.processQueue(refreshError);
-            this.handleLogout();
-            return Promise.reject(refreshError);
-          } finally {
-            this.isRefreshing = false;
+            this.tokenService.clearTokens();
+            window.location.href = '/login';
           }
         }
-
-        if (this.shouldRetry(error, requestKey)) {
-          const retryCount = this.retryAttempts.get(requestKey) || 0;
-          this.retryAttempts.set(requestKey, retryCount + 1);
-          
-          console.log(`🔄 Retrying request (attempt ${retryCount + 1}): ${requestKey}`);
-          
-          const delay = Math.min(1000 * Math.pow(2, retryCount), 10000);
-          await new Promise(resolve => setTimeout(resolve, delay));
-          
-          return this.axiosInstance(originalRequest);
-        }
-
-        return Promise.reject(error);
+        return Promise.reject(this.transformError(error));
       }
     );
   }
 
-  private shouldRetry(error: AxiosError, requestKey: string): boolean {
-    const retryCount = this.retryAttempts.get(requestKey) || 0;
-    const maxRetries = 3;
+  private transformError(error: any): ApiError {
+    let transformedError: ApiError;
     
-    if (retryCount >= maxRetries) {
-      this.retryAttempts.delete(requestKey);
-      return false;
+    if (error.response) {
+      transformedError = {
+        message: error.response.data?.error || error.response.data?.message || 'API Error',
+        status: error.response.status,
+        details: error.response.data?.details || error.response.statusText,
+      };
+    } else if (error.request) {
+      transformedError = {
+        message: 'Network Error',
+        details: 'No response received from server',
+      };
+    } else {
+      transformedError = {
+        message: error.message || 'Unknown Error',
+      };
     }
 
-    return !error.response || (error.response.status >= 500 && error.response.status < 600);
+    console.error('🚨 Transformed Error:', transformedError);
+    return transformedError;
   }
 
-  private processQueue(error: any): void {
-    this.failedQueue.forEach(({ resolve, reject }) => {
-      if (error) {
-        reject(error);
-      } else {
-        resolve();
-      }
-    });
-    this.failedQueue = [];
-  }
-
-  private handleLogout(): void {
-    this.tokenService.clearTokens();
-    toast({
-      title: "Session Expired",
-      description: "Please log in again to continue.",
-      variant: "destructive",
-    });
-    window.location.href = '/login';
-  }
-
-  getAxiosInstance() {
-    return this.axiosInstance;
-  }
-
-  validateTokens(): boolean {
-    const hasValidTokens = this.tokenService.hasValidTokens();
-    if (!hasValidTokens) {
-      console.error('No valid tokens found');
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to continue",
-        variant: "destructive",
-      });
-      return false;
-    }
-    return true;
-  }
-
-  handleApiError(error: AxiosError): any {
-    const response = error.response;
-    const responseData = response?.data as any;
-    
-    let message = 'An unexpected error occurred';
-    
-    if (responseData) {
-      message = responseData.message || 
-                responseData.detail || 
-                responseData.error || 
-                responseData.msg ||
-                error.message ||
-                'An unexpected error occurred';
-    } else if (error.message) {
-      message = error.message;
-    }
-    
-    console.error('API Error Details:', {
-      status: response?.status,
-      message,
-      url: error.config?.url,
-      method: error.config?.method?.toUpperCase(),
-      responseData
-    });
-
-    return {
-      message,
-      status: response?.status,
-      details: responseData?.details || error.message
-    };
-  }
-
+  // Enhanced user identification method - gets numeric user ID from JWT
   getCurrentUserNumber(): string | null {
     try {
       const token = this.tokenService.getAccessToken();
-      if (!token) return null;
+      if (!token) {
+        console.warn('⚠️ No access token available for user identification');
+        return null;
+      }
+
+      // Decode JWT payload to get user info
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      console.log('📱 JWT payload:', payload);
       
-      const payload = token.split('.')[1];
-      const decodedPayload = JSON.parse(atob(payload));
+      // Return the actual user ID from the token (matches backend senderID)
+      const userId = payload.id || payload.user_id || payload.sub;
+      if (userId) {
+        console.log('📱 Current user ID from JWT:', userId);
+        return userId.toString(); // Always return as string for consistency
+      }
       
-      return decodedPayload.number || decodedPayload.user_number || decodedPayload.phone_number || null;
+      console.warn('⚠️ No user ID found in JWT payload');
+      return null;
     } catch (error) {
-      console.error('❌ Failed to decode user info from token:', error);
+      console.error('❌ Error decoding JWT token:', error);
       return null;
     }
   }
 
-  logout(): void {
-    this.tokenService.clearTokens();
-    this.retryAttempts.clear();
-    console.log('👋 User logged out');
+  // Fallback method to get phone number if needed
+  getCurrentUserPhoneNumber(): string | null {
+    try {
+      const token = this.tokenService.getAccessToken();
+      if (!token) {
+        return null;
+      }
+
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.phone_number || payload.phone || null;
+    } catch (error) {
+      console.error('❌ Error getting phone number from JWT:', error);
+      return null;
+    }
+  }
+
+  // Legacy methods that other services expect
+  getAxiosInstance(): AxiosInstance {
+    return this.axiosInstance;
+  }
+
+  handleApiError(error: any): ApiError {
+    return this.transformError(error);
+  }
+
+  validateTokens(): boolean {
+    return this.tokenService.hasValidTokens();
   }
 
   isAuthenticated(): boolean {
     return this.tokenService.hasValidTokens();
+  }
+
+  logout(): void {
+    this.tokenService.clearTokens();
+  }
+
+  // HTTP methods with proper return types
+  async get<T = any>(url: string, params?: any): Promise<T> {
+    const response = await this.axiosInstance.get(url, { params });
+    // Handle both wrapped and unwrapped responses
+    return response.data && typeof response.data === 'object' && 'data' in response.data 
+      ? response.data.data 
+      : response.data;
+  }
+
+  async post<T = any>(url: string, data?: any): Promise<T> {
+    const response = await this.axiosInstance.post(url, data);
+    // Handle both wrapped and unwrapped responses
+    return response.data && typeof response.data === 'object' && 'data' in response.data 
+      ? response.data.data 
+      : response.data;
+  }
+
+  async put<T = any>(url: string, data?: any): Promise<T> {
+    const response = await this.axiosInstance.put(url, data);
+    // Handle both wrapped and unwrapped responses
+    return response.data && typeof response.data === 'object' && 'data' in response.data 
+      ? response.data.data 
+      : response.data;
+  }
+
+  async delete<T = any>(url: string): Promise<T> {
+    const response = await this.axiosInstance.delete(url);
+    // Handle both wrapped and unwrapped responses
+    return response.data && typeof response.data === 'object' && 'data' in response.data 
+      ? response.data.data 
+      : response.data;
+  }
+
+  // Raw axios instance for direct access if needed
+  get axios(): AxiosInstance {
+    return this.axiosInstance;
   }
 }
 

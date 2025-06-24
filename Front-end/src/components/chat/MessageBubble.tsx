@@ -40,49 +40,28 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 
   useEffect(() => {
     if (bubbleRef.current) {
-      // Hover animations
-      const bubble = bubbleRef.current;
-      
-      const handleMouseEnter = () => {
-        gsap.to(bubble, {
-          scale: 1.02,
-          duration: 0.2,
-          ease: "power2.out"
-        });
-      };
-      
-      const handleMouseLeave = () => {
-        gsap.to(bubble, {
-          scale: 1,
-          duration: 0.2,
-          ease: "power2.out"
-        });
-      };
-
-      bubble.addEventListener('mouseenter', handleMouseEnter);
-      bubble.addEventListener('mouseleave', handleMouseLeave);
-
-      return () => {
-        bubble.removeEventListener('mouseenter', handleMouseEnter);
-        bubble.removeEventListener('mouseleave', handleMouseLeave);
-      };
+      // WhatsApp-style entrance animation
+      gsap.fromTo(bubbleRef.current, 
+        { opacity: 0, y: 10, scale: 0.95 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: "back.out(1.2)" }
+      );
     }
   }, []);
 
   const getStatusIcon = () => {
-    if (!message.status) return null;
+    if (!message.status || !isOwnMessage) return null;
     
     switch (message.status) {
       case 'sending':
         return <Clock className="h-3 w-3 text-gray-400 animate-pulse" />;
       case 'sent':
-        return <Check className="h-3 w-3 text-gray-400" />;
+        return <Check className="h-3 w-3 text-gray-500" />;
       case 'delivered':
-        return <CheckCheck className="h-3 w-3 text-blue-400" />;
+        return <CheckCheck className="h-3 w-3 text-gray-500" />;
       case 'read':
-        return <CheckCheck className="h-3 w-3 text-green-400" />;
+        return <CheckCheck className="h-3 w-3 text-blue-500" />;
       case 'failed':
-        return <AlertCircle className="h-3 w-3 text-red-400" />;
+        return <AlertCircle className="h-3 w-3 text-red-500" />;
       default:
         return null;
     }
@@ -111,19 +90,20 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 
   return (
     <div 
-      className={`group relative max-w-xs md:max-w-md lg:max-w-lg ${isOwnMessage ? 'ml-auto' : 'mr-auto'}`}
+      className={`group relative ${isOwnMessage ? 'ml-auto' : 'mr-auto'}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       <div
         ref={bubbleRef}
         className={`
-          relative px-4 py-2 rounded-2xl shadow-sm transition-all duration-200
+          relative px-3 py-2 rounded-2xl shadow-sm transition-all duration-200 max-w-xs sm:max-w-sm md:max-w-md
           ${isOwnMessage 
-            ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-br-md' 
-            : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-bl-md'
+            ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-br-md shadow-blue-200/50 dark:shadow-blue-900/30' 
+            : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-200/50 dark:border-gray-600/50 rounded-bl-md shadow-gray-200/50 dark:shadow-gray-800/30'
           }
-          ${message.status === 'failed' ? 'border-red-300 dark:border-red-700' : ''}
+          ${message.status === 'failed' ? 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20' : ''}
+          hover:shadow-lg transition-shadow duration-200
         `}
       >
         {/* Message content */}
@@ -134,7 +114,10 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
               value={editingText}
               onChange={(e) => onEditingTextChange?.(e.target.value)}
               onKeyDown={handleKeyPress}
-              className="bg-white/20 border-white/30 text-white placeholder-white/70"
+              className={`${isOwnMessage 
+                ? 'bg-white/20 border-white/30 text-white placeholder-white/70' 
+                : 'bg-gray-50 dark:bg-gray-600 border-gray-300 dark:border-gray-500'
+              }`}
               placeholder="Edit message..."
             />
             <div className="flex space-x-1">
@@ -142,7 +125,10 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
                 size="sm"
                 variant="ghost"
                 onClick={handleSaveEdit}
-                className="h-6 px-2 text-white/80 hover:text-white hover:bg-white/20"
+                className={`h-6 px-2 ${isOwnMessage 
+                  ? 'text-white/80 hover:text-white hover:bg-white/20' 
+                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-600'
+                }`}
               >
                 <Check className="h-3 w-3" />
               </Button>
@@ -150,7 +136,10 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
                 size="sm"
                 variant="ghost"
                 onClick={onCancelEdit}
-                className="h-6 px-2 text-white/80 hover:text-white hover:bg-white/20"
+                className={`h-6 px-2 ${isOwnMessage 
+                  ? 'text-white/80 hover:text-white hover:bg-white/20' 
+                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-600'
+                }`}
               >
                 <X className="h-3 w-3" />
               </Button>
@@ -158,44 +147,49 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           </div>
         ) : (
           <>
-            <p className="text-sm leading-relaxed break-words">{message.content}</p>
+            <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">
+              {message.content}
+            </p>
             
-            {/* Message footer */}
-            <div className={`flex items-center justify-end space-x-1 mt-1 ${isOwnMessage ? 'text-white/70' : 'text-gray-500'}`}>
-              <span className="text-xs">{formatTime(message.timestamp)}</span>
+            {/* WhatsApp-style message footer */}
+            <div className={`flex items-center justify-end space-x-1 mt-1 ${
+              isOwnMessage ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'
+            }`}>
+              <span className="text-xs font-light">{formatTime(message.timestamp)}</span>
               {message.edited && (
-                <span className="text-xs opacity-70">edited</span>
+                <span className="text-xs opacity-70 italic">edited</span>
               )}
-              {isOwnMessage && getStatusIcon()}
+              {getStatusIcon()}
             </div>
           </>
         )}
 
-        {/* Edit button */}
+        {/* WhatsApp-style edit button */}
         {isOwnMessage && !isEditing && onEdit && (
           <Button
             size="sm"
             variant="ghost"
             onClick={() => onEdit(message.id, message.content)}
             className={`
-              absolute -top-8 right-0 h-6 w-6 p-0 
-              ${isHovered ? 'opacity-100' : 'opacity-0'} 
-              transition-opacity duration-200
-              bg-white/10 hover:bg-white/20 text-white/80 hover:text-white
-              rounded-full
+              absolute -top-8 right-0 h-7 w-7 p-0 
+              ${isHovered ? 'opacity-100 scale-100' : 'opacity-0 scale-95'} 
+              transition-all duration-200
+              bg-white/90 hover:bg-white dark:bg-gray-700/90 dark:hover:bg-gray-600
+              text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white
+              rounded-full shadow-lg border border-gray-200 dark:border-gray-600
             `}
           >
             <Edit3 className="h-3 w-3" />
           </Button>
         )}
 
-        {/* Message bubble tail */}
+        {/* WhatsApp-style message tail */}
         <div 
           className={`
             absolute top-3 w-0 h-0
             ${isOwnMessage 
-              ? 'right-0 translate-x-full border-l-8 border-l-purple-500 border-t-8 border-t-transparent border-b-8 border-b-transparent' 
-              : 'left-0 -translate-x-full border-r-8 border-r-white dark:border-r-gray-800 border-t-8 border-t-transparent border-b-8 border-b-transparent'
+              ? 'right-0 translate-x-full border-l-8 border-l-blue-500 border-t-8 border-t-transparent border-b-8 border-b-transparent' 
+              : 'left-0 -translate-x-full border-r-8 border-r-white dark:border-r-gray-700 border-t-8 border-t-transparent border-b-8 border-b-transparent'
             }
           `}
         />
