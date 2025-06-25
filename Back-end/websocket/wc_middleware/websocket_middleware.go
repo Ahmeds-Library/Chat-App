@@ -1,11 +1,10 @@
-package websocket
+package wc_middleware
 
 import (
 	"fmt"
 	"net/http"
 
-	"github.com/Ahmeds-Library/Chat-App/internal/middleware"
-	"github.com/Ahmeds-Library/Chat-App/internal/utils"
+	"github.com/Ahmeds-Library/Chat-App/wc_utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -18,7 +17,7 @@ func WebSocket_Middleware() gin.HandlerFunc {
 			return
 		}
 
-		if err := middleware.VerifyToken(tokenString); err != nil {
+		if err := wc_utils.VerifyToken(tokenString); err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
 			return
 		}
@@ -34,7 +33,7 @@ func ValidateToken_WebSocket(C *gin.Context) (map[string]interface{}, bool) {
 		return nil, false
 	}
 
-	claims, err := utils.DecodeToken(tokenString)
+	claims, err := wc_utils.DecodeToken(tokenString)
 	if err != nil {
 		C.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token", "details": err.Error()})
 		return nil, false

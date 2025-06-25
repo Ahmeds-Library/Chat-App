@@ -1,4 +1,4 @@
-package utils
+package wc_utils
 
 import (
 	"log"
@@ -6,12 +6,9 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func LoadEnvVariables() {
+func LoadEnv() {
 	err := godotenv.Load("./../.env")
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
 }
-
-
-	

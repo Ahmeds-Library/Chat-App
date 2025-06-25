@@ -15,3 +15,4 @@ type ChatPartner struct {
 	LastMessage   string
 	LastMessageAt time.Time
 }
+	
