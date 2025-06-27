@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./back-end
+    container_name: backend_service
+    ports:
+      - "8001:8001"
+    depends_on:
+      - mongo
+      - postgres
+    restart: unless-stopped
+    env_file:
+    - ./back-end/.env  
+
+  websocket:
+    build:
+      context: ./websocket
+    container_name: websocket_service
+    ports:
+      - "9000:9000"
+    depends_on:
+      - mongo
+      - postgres
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./front-end
+      dockerfile: Dockerfile
+    container_name: frontend_service
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+      - websocket
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:latest
+    container_name: mongo_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:latest
+    container_name: postgres_db
+    environment:
+      POSTGRES_DB: chat-app
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 03088808
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
+  pg_data:
