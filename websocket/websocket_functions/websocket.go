@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/Ahmeds-Library/Chat-App/wc_middleware"
+	"github.com/Ahmeds-Library/Chat-App/websocket_middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
@@ -15,7 +15,7 @@ var upgrader = websocket.Upgrader{
 
 func WebSocketHandler(hub *Hub) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		claims, ok := wc_middleware.ValidateToken_WebSocket(c)
+		claims, ok := websocket_middleware.ValidateToken_WebSocket(c)
 		if !ok {
 			return
 		}
@@ -23,7 +23,7 @@ func WebSocketHandler(hub *Hub) gin.HandlerFunc {
 
 		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 		if err != nil {
-			log.Println("❌ Upgrade error:", err)
+			log.Println("Upgrade error:", err)
 			return
 		}
 
@@ -34,7 +34,7 @@ func WebSocketHandler(hub *Hub) gin.HandlerFunc {
 		}
 
 		hub.AddClient(userID, client)
-		log.Println("✅ Connected:", userID)
+		log.Println("Connected:", userID)
 
 		go client.WritePump()
 		client.ReadPump(hub)

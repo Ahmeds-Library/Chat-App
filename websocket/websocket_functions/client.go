@@ -4,8 +4,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/Ahmeds-Library/Chat-App/wc_database"
-	"github.com/Ahmeds-Library/Chat-App/wc_models"
+	websocket_database "github.com/Ahmeds-Library/Chat-App/websocket_database/mongo"
+	websocket_postgres "github.com/Ahmeds-Library/Chat-App/websocket_database/postgres"
+	"github.com/Ahmeds-Library/Chat-App/websocket_models"
 	"github.com/gorilla/websocket"
 )
 
@@ -24,34 +25,34 @@ func (c *Client) ReadPump(h *Hub) {
 	for {
 		var input struct {
 			ReceiverNumber string `json:"receiver_number"`
-			Message        string `json:"message"`         
+			Message        string `json:"message"`
 		}
 
 		if err := c.conn.ReadJSON(&input); err != nil {
-			log.Println("❌ Read error:", err)
+			log.Println("Read error:", err)
 			break
 		}
 
-		receiverUser, err := wc_database.GetUserByPhone(input.ReceiverNumber)
+		receiverUser, err := websocket_postgres.GetUserByPhone(input.ReceiverNumber)
 		if err != nil {
-			log.Println("❌ Receiver not found:", err)
+			log.Println(" Receiver not found:", err)
 			continue
 		}
 
 		if c.userID == receiverUser.ID {
-			log.Println("❌ Sender and receiver cannot be the same")
+			log.Println(" Sender and receiver cannot be the same")
 			continue
 		}
 
-		msg := &wc_models.Save_Message{
+		msg := &websocket_models.Save_Message{
 			SenderID:   c.userID,
 			ReceiverID: receiverUser.ID,
 			Message:    input.Message,
 			CreatedAt:  time.Now(),
 		}
 
-		if err := wc_database.SaveMessage(msg); err != nil {
-			log.Println("❌ Mongo Save Error:", err)
+		if err := websocket_database.SaveMessage(msg); err != nil {
+			log.Println("Mongo Save Error:", err)
 			continue
 		}
 
@@ -62,7 +63,7 @@ func (c *Client) ReadPump(h *Hub) {
 func (c *Client) WritePump() {
 	for msg := range c.send {
 		if err := c.conn.WriteJSON(msg); err != nil {
-			log.Println("❌ Write error:", err)
+			log.Println("Write error:", err)
 			break
 		}
 	}

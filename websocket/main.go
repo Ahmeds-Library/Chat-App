@@ -4,34 +4,35 @@ import (
 	"log"
 	"os"
 
-	"github.com/Ahmeds-Library/Chat-App/wc_database"
-	"github.com/Ahmeds-Library/Chat-App/wc_middleware"
-	"github.com/Ahmeds-Library/Chat-App/wc_utils"
+	websocket_mongo "github.com/Ahmeds-Library/Chat-App/websocket_database/mongo"
+	websocket_postgres "github.com/Ahmeds-Library/Chat-App/websocket_database/postgres"
 	websocket "github.com/Ahmeds-Library/Chat-App/websocket_functions"
+	"github.com/Ahmeds-Library/Chat-App/websocket_middleware"
+	"github.com/Ahmeds-Library/Chat-App/websocket_utils"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	wc_utils.LoadEnv()
+	websocket_utils.LoadEnv()
 
-	if err := wc_database.ConnectMongoDatabase(); err != nil {
-		log.Fatal("❌ Mongo Init Error:", err)
+	if err := websocket_mongo.ConnectMongoDatabase(); err != nil {
+		log.Fatal("Mongo Init Error:", err)
 	}
 
-	wc_database.ConnectPgAdminDatabase()
+	websocket_postgres.ConnectPgAdminDatabase()
 
 	hub := websocket.NewHub()
 	r := gin.Default()
 
-	r.GET("/ws", wc_middleware.WebSocket_Middleware(), websocket.WebSocketHandler(hub))
+	r.GET("/ws", websocket_middleware.WebSocket_Middleware(), websocket.WebSocketHandler(hub))
 
 	port := os.Getenv("WS_PORT")
 	if port == "" {
 		port = "9000"
 	}
-	log.Println("✅ WebSocket Server running on port", port)
+	log.Println("WebSocket Server running on port", port)
 
 	if err := r.Run(":" + port); err != nil {
-		log.Fatal("❌ Server error:", err)
+		log.Fatal("Server error:", err)
 	}
 }
