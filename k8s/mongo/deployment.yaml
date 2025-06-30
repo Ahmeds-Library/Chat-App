@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mongo
-  namespace: chat-app
+  namespace: chat-app-deps
 spec:
   replicas: 1
   selector:
@@ -30,5 +30,3 @@ spec:
               name: mongo-storage
       volumes:
         - name: mongo-storage
-          persistentVolumeClaim:
-            claimName: mongo-pvc
