@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgres
-  namespace: chat-app
+  namespace: chat-app-deps
 spec:
   replicas: 1
   selector:
@@ -37,5 +37,3 @@ spec:
               cpu: "500m"
       volumes:
         - name: postgres-storage
-          persistentVolumeClaim:
-            claimName: postgres-pvc

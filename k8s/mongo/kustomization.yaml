@@ -1,0 +1,4 @@
+namespace: chat-app-deps
+resources:
+  - deployment.yaml
+  - service.yaml
