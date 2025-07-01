@@ -4,30 +4,32 @@ metadata:
   name: chat-app-ingress
   namespace: chat-app-core
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
+  ingressClassName: nginx
   rules:
     - host: chat-app.local
       http:
         paths:
-          - path: /
-            pathType: Prefix
+          - path: /()(.*)
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: frontend
                 port:
                   number: 80
 
-          - path: /api
-            pathType: Prefix
+          - path: /api(/|$)(.*)
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: backend
                 port:
                   number: 8001
 
-          - path: /ws
-            pathType: Prefix
+          - path: /ws(/|$)(.*)
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: websocket
